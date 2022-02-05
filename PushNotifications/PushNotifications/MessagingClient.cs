@@ -14,22 +14,22 @@ namespace PushNotifications
         }
 
 
-        public async Task SendNotification(string token, string title, string body)
+        public async Task SendNotification(List<string> fcmTokens, string title, string body)
         {
-            var result = await messaging.SendAsync(CreateNotification(title, body, token));
+            var result = await messaging.SendMulticastAsync(CreateNotification(fcmTokens, title, body));
             //do something with result
         }
 
-        private Message CreateNotification(string title, string notificationBody, string token)
+        private MulticastMessage CreateNotification(List<string> registrationTokens, string title, string notificationBody)
         {
-            return new Message()
+            return new MulticastMessage()
             {
-                Token = token,
-                Notification = new Notification()
-                {
-                    Body = notificationBody,
-                    Title = title
-                }
+                Tokens = registrationTokens,
+                Data = new Dictionary<string, string>()
+                     {
+                     {"title", title},
+                     {"body", notificationBody},
+                     },
             };
         }
     }

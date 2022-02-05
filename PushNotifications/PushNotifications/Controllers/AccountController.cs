@@ -5,6 +5,7 @@ using System.Text;
 using System.Security.Claims;
 using PushNotifications.Dto;
 using FirebaseAdmin.Messaging;
+using Microsoft.AspNetCore.Authorization;
 
 namespace PushNotifications.Controllers
 {
@@ -61,12 +62,17 @@ namespace PushNotifications.Controllers
             return Unauthorized();
         }
 
+        [Authorize]
         [HttpGet("sendnotification")]
-        public async Task<IActionResult> SendNotification([FromQuery]string fToken)
+        public async Task<IActionResult> SendNotification()
         {
             try
             {
-                await _messagingClient.SendNotification(fToken, "Hello Notification", "This is my first firebase notification");
+                var userId = HttpContext.User.Identity.Name;
+                var getUserTokens = _context.UserTokens.Where(x => x.UserId ==  int.Parse(userId)).Select(x=> x.FToken).ToList();
+
+               
+               await _messagingClient.SendNotification(getUserTokens, "Hello Notification", "This is my first firebase notification");
                 return Ok();    
             }
             catch (Exception ex)
@@ -81,7 +87,7 @@ namespace PushNotifications.Controllers
         {
             var userDetails = _context.Users.FirstOrDefault(x => x.Username.Equals(user.UserName) && x.Password.Equals(user.Password));
 
-            if(userDetails != null)
+            if(userDetails != null && !string.IsNullOrWhiteSpace(user.FToken))
             {
                 var checkTokenExists = _context.UserTokens.Any(x => (x.UserId == userDetails.Id && x.FToken == user.FToken));
                 if (!checkTokenExists)
@@ -104,10 +110,8 @@ namespace PushNotifications.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username)
+                new Claim(ClaimTypes.Name, user.Id.ToString())
             };
-
-
 
             var key = new SymmetricSecurityKey(Encoding.UTF8
                 .GetBytes(_config.GetSection("AppSettings:Token").Value));

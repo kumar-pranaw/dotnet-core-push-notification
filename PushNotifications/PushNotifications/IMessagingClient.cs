@@ -2,6 +2,6 @@
 {
     public interface IMessagingClient
     {
-        Task SendNotification(string token, string title, string body);
+        Task SendNotification(List<string> fcmTokens, string title, string body);
     }
 }
