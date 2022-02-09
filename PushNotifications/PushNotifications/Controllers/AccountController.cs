@@ -90,6 +90,7 @@ namespace PushNotifications.Controllers
             if(userDetails != null && !string.IsNullOrWhiteSpace(user.FToken))
             {
                 var checkTokenExists = _context.UserTokens.Any(x => (x.UserId == userDetails.Id && x.FToken == user.FToken));
+                
                 if (!checkTokenExists)
                 {
                     UserToken token = new UserToken()
@@ -99,8 +100,8 @@ namespace PushNotifications.Controllers
                         UserId = userDetails.Id
                     };
 
-                    _context.UserTokens.AddAsync(token);
-                    _context.SaveChangesAsync();
+                    _context.UserTokens.Add(token);
+                    _context.SaveChanges();
                 }
             }
         }

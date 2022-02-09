@@ -29,6 +29,7 @@ namespace PushNotifications
                      {
                      {"title", title},
                      {"body", notificationBody},
+                     {"icon", "https://banner2.cleanpng.com/20191013/tat/transparent-ui-icon-notification-icon-bell-icon-5da3d1f3d32951.3009239215710172038649.jpg" }
                      },
             };
         }
