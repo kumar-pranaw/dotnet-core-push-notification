@@ -7,6 +7,7 @@ namespace PushNotifications
     public class MessagingClient : IMessagingClient
     {
         private readonly FirebaseMessaging messaging;
+
         public MessagingClient()
         {
             var app = FirebaseApp.Create(new AppOptions() { Credential = GoogleCredential.FromFile("serviceAccountKey.json").CreateScoped("https://www.googleapis.com/auth/firebase.messaging") });
@@ -14,10 +15,11 @@ namespace PushNotifications
         }
 
 
-        public async Task SendNotification(List<string> fcmTokens, string title, string body)
+        public async Task<BatchResponse> SendNotification(List<string> fcmTokens, string title, string body)
         {
             var result = await messaging.SendMulticastAsync(CreateNotification(fcmTokens, title, body));
-            //do something with result
+
+            return result;
         }
 
         private MulticastMessage CreateNotification(List<string> registrationTokens, string title, string notificationBody)

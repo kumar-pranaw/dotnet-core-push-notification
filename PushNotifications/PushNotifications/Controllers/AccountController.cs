@@ -43,36 +43,55 @@ namespace PushNotifications.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(AuthDto login)
         {
-
-            var result = _context.Users.Any(x => x.Username.Equals(login.UserName) && x.Password.Equals(login.Password));
-
-            if (result)
+            try
             {
-                var user = _context.Users.FirstOrDefault(x => x.Username.Equals(login.UserName) && x.Password.Equals(login.Password));
+                var result = _context.Users.Any(x => x.Username.Equals(login.UserName) && x.Password.Equals(login.Password));
 
-                 SaveFirebaseToken(login);
-
-                return Ok(new
+                if (result)
                 {
-                    token = GenerateJwtToken(user).Result,
-                    user = user
-                });
-            }
+                    var user = _context.Users.FirstOrDefault(x => x.Username.Equals(login.UserName) && x.Password.Equals(login.Password));
 
-            return Unauthorized();
+                    SaveFirebaseToken(login);
+
+                    return Ok(new
+                    {
+                        token = GenerateJwtToken(user).Result,
+                        user = user
+                    });
+                }
+
+                return Unauthorized();
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ex.Message);
+            }
+            
         }
 
-        [Authorize]
-        [HttpGet("sendnotification")]
-        public async Task<IActionResult> SendNotification()
+        [HttpGet("sendnotification/{userId}")]
+        public async Task<IActionResult> SendNotification(string userId)
         {
             try
             {
-                var userId = HttpContext.User.Identity.Name;
+                //var userId = HttpContext.User.Identity.Name;
                 var getUserTokens = _context.UserTokens.Where(x => x.UserId ==  int.Parse(userId)).Select(x=> x.FToken).ToList();
 
                
-               await _messagingClient.SendNotification(getUserTokens, "Hello Notification", "This is my first firebase notification");
+              var result = await _messagingClient.SendNotification(getUserTokens, "Hello Notification", "This is my first firebase notification");
+
+
+                // Remove the token from db when isSuccess is false
+                for (int i = 0; i < result.Responses.Count; i++)
+                {
+                    if (!result.Responses[i].IsSuccess)
+                    {
+                        var tokenToRemove = _context.UserTokens.Where(x => x.FToken == getUserTokens[i]).FirstOrDefault();
+                        _context.UserTokens.Remove(tokenToRemove);
+                        await _context.SaveChangesAsync();
+                    }
+                }
                 return Ok();    
             }
             catch (Exception ex)
@@ -82,15 +101,28 @@ namespace PushNotifications.Controllers
            
         }
 
+        [Authorize]
+        [HttpDelete("logOut")]
+        public async Task<IActionResult> LogOut(string fToken)
+        {
+            var userId = HttpContext.User.Identity.Name;
+            var getUserTokens = _context.UserTokens.Where(x => x.UserId == int.Parse(userId) && x.FToken== fToken).FirstOrDefault();
 
+            _context.UserTokens.Remove(getUserTokens);
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        #region Private helper methods
         private void SaveFirebaseToken(AuthDto user)
         {
             var userDetails = _context.Users.FirstOrDefault(x => x.Username.Equals(user.UserName) && x.Password.Equals(user.Password));
 
-            if(userDetails != null && !string.IsNullOrWhiteSpace(user.FToken))
+            if (userDetails != null && !string.IsNullOrWhiteSpace(user.FToken))
             {
                 var checkTokenExists = _context.UserTokens.Any(x => (x.UserId == userDetails.Id && x.FToken == user.FToken));
-                
+
                 if (!checkTokenExists)
                 {
                     UserToken token = new UserToken()
@@ -132,5 +164,7 @@ namespace PushNotifications.Controllers
 
             return tokenHandler.WriteToken(token);
         }
+        #endregion
+
     }
 }
