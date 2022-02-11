@@ -35,7 +35,7 @@ namespace PushNotifications.Controllers
             {
                 await _context.Users.AddAsync(userForRegisterDto);
                 await _context.SaveChangesAsync();
-                return Ok("User created successfully");
+                return Ok(new {message= "User created successfully" });
             }
 
         }
@@ -60,12 +60,12 @@ namespace PushNotifications.Controllers
                     });
                 }
 
-                return Unauthorized();
+                return Unauthorized(new { message = "Unauthorized user" });
             }
             catch (Exception ex)
             {
 
-                return BadRequest(ex.Message);
+                return BadRequest(new { message = ex.Message });
             }
             
         }
@@ -96,7 +96,7 @@ namespace PushNotifications.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new { message = ex.Message });
             }
            
         }
