@@ -33,6 +33,11 @@ namespace PushNotifications.Controllers
             }
             else
             {
+                var checkUserName = _context.Users.Any(x => x.Username == userForRegisterDto.Username);
+                if (checkUserName)
+                {
+                    return BadRequest(new { message = "This user already exists" });
+                }
                 await _context.Users.AddAsync(userForRegisterDto);
                 await _context.SaveChangesAsync();
                 return Ok(new {message= "User created successfully" });
