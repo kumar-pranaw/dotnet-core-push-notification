@@ -40,7 +40,7 @@ namespace PushNotifications.Controllers
                 }
                 await _context.Users.AddAsync(userForRegisterDto);
                 await _context.SaveChangesAsync();
-                return Ok(new {message= "User created successfully" });
+                return Ok(new { message = "User created successfully" });
             }
 
         }
@@ -72,7 +72,7 @@ namespace PushNotifications.Controllers
 
                 return BadRequest(new { message = ex.Message });
             }
-            
+
         }
 
         [HttpGet("sendnotification/{userId}")]
@@ -81,29 +81,36 @@ namespace PushNotifications.Controllers
             try
             {
                 //var userId = HttpContext.User.Identity.Name;
-                var getUserTokens = _context.UserTokens.Where(x => x.UserId ==  int.Parse(userId)).Select(x=> x.FToken).ToList();
-
-               
-              var result = await _messagingClient.SendNotification(getUserTokens, "Hello Notification", "This is my first firebase notification");
+                var getUserTokens = _context.UserTokens.Where(x => x.UserId == int.Parse(userId)).Select(x => x.FToken).ToList();
 
 
-                // Remove the token from db when isSuccess is false
-                for (int i = 0; i < result.Responses.Count; i++)
+                var result = await _messagingClient.SendNotification(getUserTokens, "Hello Notification", "This is my first firebase notification");
+
+
+                if (result.Responses.Count == 0)
                 {
-                    if (!result.Responses[i].IsSuccess)
-                    {
-                        var tokenToRemove = _context.UserTokens.Where(x => x.FToken == getUserTokens[i]).FirstOrDefault();
-                        _context.UserTokens.Remove(tokenToRemove);
-                        await _context.SaveChangesAsync();
-                    }
+                    return Ok(new { message = "No active ftoken found for this user" });
                 }
-                return Ok();    
+                else
+                {
+                    // Remove the token from db when isSuccess is false
+                    for (int i = 0; i < result.Responses.Count; i++)
+                    {
+                        if (!result.Responses[i].IsSuccess)
+                        {
+                            var tokenToRemove = _context.UserTokens.Where(x => x.FToken == getUserTokens[i]).FirstOrDefault();
+                            _context.UserTokens.Remove(tokenToRemove);
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                    return Ok(new { message = "notification sent successfully"});
+                }
             }
             catch (Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
-           
+
         }
 
         [Authorize]
@@ -111,12 +118,12 @@ namespace PushNotifications.Controllers
         public async Task<IActionResult> LogOut(string fToken)
         {
             var userId = HttpContext.User.Identity.Name;
-            var getUserTokens = _context.UserTokens.Where(x => x.UserId == int.Parse(userId) && x.FToken== fToken).FirstOrDefault();
+            var getUserTokens = _context.UserTokens.Where(x => x.UserId == int.Parse(userId) && x.FToken == fToken).FirstOrDefault();
 
             _context.UserTokens.Remove(getUserTokens);
             await _context.SaveChangesAsync();
 
-            return Ok();
+            return Ok(new { message = "user successfully logged out"});
         }
 
         #region Private helper methods
