@@ -10,5 +10,6 @@ namespace PushNotifications
 
         public DbSet<User> Users { get; set; }
         public DbSet<UserToken> UserTokens { get; set; }
+        public DbSet<HashLogs> HashLogs { get; set; }
     }
 }
