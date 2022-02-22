@@ -4,7 +4,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Security.Claims;
 using PushNotifications.Dto;
-using FirebaseAdmin.Messaging;
 using Microsoft.AspNetCore.Authorization;
 
 namespace PushNotifications.Controllers
